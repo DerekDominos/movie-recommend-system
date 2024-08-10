@@ -1,0 +1,259 @@
+
+<style>
+.white_content {
+        display: none;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        height: 90%;
+
+        background-color: #4CAF50;
+        z-index: 80;
+        overflow-x: hidden; /* 隐藏水平滚动条 */
+        overflow-y: auto; /* 仅保留上下滚动条 */
+        border-radius: 10px; /* 添加圆角效果 */
+        width:650px;
+        height:400px;
+        background: rgba(255, 255, 255, 0.6);
+        -webkit-backdrop-filter: blur(8px);
+        backdrop-filter: blur(8px);
+        box-shadow:inset 0 0 6px rgba(255, 255, 255, 0.2);
+
+    }
+
+        .white_content .text {
+    font-family: "PingFang SC", sans-serif; /* 设置字体 */}
+
+    .my-comments {
+    margin: 20px auto;
+            position: relative;
+            width: 600px;
+            height: 60px;
+            color: #fff;
+            line-height: 50px;
+            text-align: left;
+            border: 1px solid teal;
+            border-radius: 5px;
+            background: white;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.5); /* 添加边框阴影 */
+}
+
+.my-comments::after{
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 0;
+            /* 箭头靠下边 */
+            left: 25px;
+            bottom: -10px;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-top: 10px solid #4CAF50;
+
+        }
+
+
+
+</style>
+{% extends 'recommend/base.html'%}
+{% block title %}{{movies.title}}{% endblock %}
+
+{% block body %}
+{% if messages %}
+    <ul class="messages">
+        {% for message in messages %}
+            <div class="alert alert-success">
+              <strong>Success!</strong> {{message}}
+            </div>
+        {% endfor %}
+    </ul>
+{% endif %}
+
+
+
+<!--<form class="form-horizontal" role="search" method="post" action="{% url 'detail' movies.id %}" onsubmit="return validateFormCom()"  name="CommentForm">-->
+<!--    {% csrf_token %}-->
+<!--    <div class="form-group">-->
+<!--        <label for="comment">Comment:</label>-->
+<!--        <textarea id="comment" name="comment" rows="3" cols="40" placeholder="Enter your comment"></textarea>-->
+<!--    </div>-->
+<!--    <button type="submit" class="btn btn-primary">确认</button>-->
+<!--</form>-->
+
+<script type="text/javascript">
+    function validateFormCom() {
+        var x = document.forms["commentForm"]["comment"].value;
+        if (x == "") {
+            alert("请填写评论");
+            return false;
+        }
+    }
+</script>
+
+
+
+<div class="container-fluid col-sm-offset-1">
+
+    <div class="row">
+        <!-- Left Movie Info -->
+
+        <div class="col-sm-2 col-md-3">
+<!--            <div class="panel panel-default">-->
+<!--                <div class="panel-body" style="border-radius: 22px 22px 22px 22px;">-->
+                    <br/>
+                    <a href="#">
+                        <img src="{{ movies.movie_logo.url}}" class="img-responsive" style="">
+                    </a>
+                    <h2></h2>
+<!--                </div>-->
+<!--            </div>-->
+        </div>
+        <!-- Right Movie Info -->
+        <div class="col-sm-offset-0 col-sm-2 col-md-4">
+            <br/>
+            <br/>
+            <h1 style="color:#fff">{{movies.title}}</h1>
+            <h3><small>类型: {{movies.genre}}</small>
+                <small>点击量: {{movies.click_count}}</small>
+                <br/>
+                <small>豆瓣评分：{{movies.douban_rate}}/10</small>
+                <br/>
+                <small>导演：{{movies.director}}</small>
+                <br/>
+                <small>上映日期：{{movies.date}}</small>
+            </h3>
+
+        </div>
+
+            <div class="col-sm-offset-0 col-sm-8 col-md-3">
+                <br/>
+                <br/>
+                <br/>
+                <form class="form-horizontal" role="search" method="post" action="{% url 'detail' movies.id %}" onsubmit="return validateForm()"  name="ratingForm">
+                    <div class="form-group">
+                        <div class="input-group">
+                            <div class="row">
+                                <div class="col-lg-14">
+                                    <div   class="star-rating">
+                                        <span>评分</span>
+
+                                        <span class="fa fa-star" data-rating="1"></span>
+                                        <span class="fa fa-star" data-rating="2"></span>
+                                        <span class="fa fa-star" data-rating="3"></span>
+                                        <span class="fa fa-star" data-rating="4"></span>
+                                        <span class="fa fa-star" data-rating="5"></span>
+
+                                        {% if rate_flag %}
+                                            <input type="hidden" name="rating" class="rating-value" value="{{movie_rating}}" >
+                                        {% else %}
+                                            <input type="hidden" name="rating" class="rating-value" value="0">
+                                        {% endif %}
+                                        {% csrf_token %}
+                                    </div>
+                                </div>
+                            </div>
+                            <br/>
+                            <input type="submit" class="button" value="确认" style="padding: 10px 25px;" name="submit-button2">
+                        </div>
+                    </div>
+                </form>
+
+                <form class="form-horizontal" role="search" method="post" action="{% url 'detail' movies.id %}">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <div class="input-group">
+                            <div class="row">
+                                <div class="col-lg-14">
+                                    <div class="star-rating">
+                                        <span>加入我的列表  </span>
+
+                                        {% if update %}
+                                        <input type="checkbox" name="watch" checked><br/>
+                                        <input type="submit" class="button" style="padding: 7px 25px;" value="移除" name="watch">
+                                        {% else %}
+                                        <input type="checkbox" name="watch"><br/>
+                                        <input type="submit" class="button" style="padding: 7px 25px;" value="添加">
+
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+<!--                            <input type="submit" class="button" value="Add">-->
+                        </div>
+                    </div>
+                </form>
+
+
+            </div>
+        </div>
+    <div class="row">
+        <div class="col-sm-offset-0 col-sm-2 col-md-11">
+            <br/>
+            <br/>
+            <span style="color:#fff;font-size: 20px;">{{movies.title}}的剧情简介：</span>
+            <h1 style="color:#fff;font-size: 14px;">{{movies.description}}</h1>
+            <form class="form-horizontal" role="search" method="post" action="{% url 'detail' movies.id %}"
+                  onsubmit="return validateFormCom()" name="CommentForm">
+                {% csrf_token %}
+                <div class="form-group" style="text-align:center;">
+                        <br/>
+                        <br/>
+                        <textarea id="comment" name="comment" rows="3" cols="40" class="comment"
+                                  placeholder="输入你的评价："></textarea>
+                    <br/>
+                    <br/>
+                    <button type="submit"
+                            style="border:10px;display: inline-block; background-color: #4CAF50; color: white; padding: 5px 10px; font-size: 15px; text-decoration: none;  ">
+                        提交评论
+                    </button>
+
+                    <a href="JavaScript:void(0)" onclick="openDialog()"
+                       style="display: inline-block; background-color: #4CAF50; color: white; padding: 5px 10px; font-size: 15px; text-decoration: none; ">评论区</a>
+
+                    <div id="light" class="white_content">
+                        <form>
+
+                          {% for comment in comments %}
+                            <div class="my-comments" style="padding-left:15px;" >
+                                <span style="background-color: #4CAF50;border-radius: 3px;">
+                                    <text style="font-size:10px;text-align: left;color:black;" >用户 {{ comment.user__username }}</text></span><&nbsp>
+                            <text style="color:black;font-size:15px;text-align: left;">{{ comment.comment }}</text>
+                            </div>
+
+                            <div style="height:5px;width:800px;border-top:1px solid #ccc;float:left;margin-top:15px;"></div>
+                            <br/>
+                            {% endfor %}
+
+
+                        </form>
+                        <a href="javascript:void(0)" onclick="closeDialog()">关闭窗口</a>
+                    </div>
+                </div>
+                <div id="fade" class="black_overlay"></div>
+            </form>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        function openDialog(){
+            document.getElementById('light').style.display='block';
+        }
+        function closeDialog(){
+            document.getElementById('light').style.display='none';
+        }
+    </script>
+    </div>
+</div>
+
+
+
+<!--<form>-->
+<!--    {% for comment in comments %}-->
+<!--        <p>By: {{ comment.user__username }}</p>-->
+<!--        <p style="color:#fff;font-size:30px;">{{ comment.comment }}</p>-->
+<!--    {% endfor %}-->
+<!--</form>-->
+{% endblock %}
+
+

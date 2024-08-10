@@ -1,0 +1,300 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-alpha1/dist/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
+
+
+    <style>
+        /* 样式定义，可根据实际需求进行修改 */
+        .highlight {
+            background-color: yellow;
+        }
+        .header {
+            background-color: #f1f1f1;
+            padding: 20px;
+        }
+        .content {
+            padding: 20px;
+        }
+
+
+        #movieTable {
+            border-collapse: collapse;
+            margin: 20px auto;
+            width: 100%;
+            border: 1px solid #ddd;
+        }
+
+        #movieTable th,
+        #movieTable td {
+            padding: 8px;
+            border: 1px solid #ddd;
+        }
+
+        #movieTable tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        #movieTable th {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        #movieTable td {
+            width: 100px;
+        }
+
+        .ellipsis-text {
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .modal {
+          display: none;
+          position: fixed;
+          z-index: 1;
+          left: 0;
+          top: 0;
+          width: 100%;
+          height: 100%;
+          overflow: auto;
+          background-color: rgba(0, 128, 0, 0.2); /* 修改背景颜色为浅绿色 */
+        }
+
+        .modal-content {
+          background-color: #fff;
+          margin: 15% auto;
+          padding: 20px;
+          border: 1px solid #888;
+          width: 50%; /* 修改宽度为 50% */
+        }
+
+        .modal-content:last-child {
+          width: auto; /* 最后一个元素的宽度为自适应 */
+        }
+
+        .close {
+          color: #888;
+          float: right;
+          font-size: 28px;
+          font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+          color: #000;
+          text-decoration: none;
+          cursor: pointer;
+        }
+
+    </style>
+
+</head>
+<body>
+    <div class="header">
+        <h1>Welcome, Administrator!</h1>
+        <button onclick="logout()" class="btn btn-danger">Logout</button>
+        <button onclick="showDataVisualization()" class="btn btn-primary">Data Visualization</button>
+        <button onclick="showFilmManagement()" class="btn btn-success">Film Information Management</button>
+        <button onclick="showUserManagement()" class="btn btn-info">User Information Management</button>
+    </div>
+    <div class="content">
+        <div id="filmManagement" >
+            <form method="POST" action="/getmovie/" enctype="multipart/form-data">
+                 {% csrf_token %}
+                <span style="color: #fff; background-color: #0d6efd; font-size:25px">Add Movie：</span>
+                <span>Movie Id</span><input type="text" name="id" style="width: 100px;">
+                <span>Title</span><input type="text" name="title" style="width: 100px;">
+                <span>Type</span><input type="text" name="genre" style="width: 100px;">
+                <span>Logo</span><input type="file" name="movie_logo" style="width: 250px;" value="Submit">
+
+                <span>Decription</span><input type="text" name="description" style="width: 100px;">
+                <input type="submit" value="Submit">
+            </form>
+
+            <!-- 显示电影数据 -->
+            <table id="movieTable">
+                <thead>
+                    <tr>
+                        <th style="width: 200px">Actions</th>
+                        <th style="width: 100px">ID</th>
+                        <th style="width: 350px">Title</th>
+                        <th style="width: 350px">Genre</th>
+                        <th style="width: 150px">Douban_rate</th>
+                        <th style="width: 300px">Director</th>
+                        <th style="width: 150px">Date</th>
+                        <th style="width: 300px">Description</th>
+                    </tr>
+                </thead>
+                {% for movie in context.movies %}
+                    <tr>
+                        <td style="width: 300px">
+                            <form method="POST" action="{% url 'deletemovie' movie.id %}"> <!-- 设置表单的提交路径 -->
+                                {% csrf_token %}
+                                <input type="submit" value="Delete">
+                            </form>
+                            <button onclick="openModal('{{ movie.id }}', '{{ movie.title }}', '{{ movie.genre }}', '{{ movie.douban_rate }}', '{{ movie.director }}', '{{ movie.date }}', '{{ movie.description }}')">Update</button>
+                        </td>
+                        <td style="width: 300px">{{ movie.id }}</td>
+                        <td style="width: 300px">{{ movie.title }}</td>
+                        <td style="width: 300px">{{ movie.genre }}</td>
+                        <td style="width: 300px">{{ movie.douban_rate }}</td>
+                        <td style="width: 300px">{{ movie.director }}</td>
+                        <td style="width: 300px">{{ movie.date }}</td>
+                        <td style="width: 300px" class="ellipsis-text">
+                            {{ movie.description|slice:":30" }}
+                            {% if movie.description|length > 30 %}
+                                <button onclick="showModal('{{ movie.description }}')">Show all</button>
+                            {% else %}
+                                {{ movie.description }}
+                            {% endif %}
+
+                        </td>
+<!--                        <td style="width: 50px" class="ellipsis-text">{{ movie.description }}</td>-->
+
+                    </tr>
+                {% endfor %}
+            </table>
+
+            <div id="myModal" class="modal">
+                <div class="modal-content">
+                    <span class="close" onclick="closeModal()">&times;</span>
+                    <h2>Update Movie</h2>
+                    <form id="updateForm" >
+                        {% csrf_token %}
+                        <input id="movie_id" type="hidden" name="movie_id" value="{{ movie.id }}">
+                        <label for="title">Title:</label>
+                        <input type="text" id="title" name="title">
+                        <label for="genre">Genre:</label>
+                        <input type="text" id="genre" name="genre">
+                        <label for="doubanRate">Douban_rate:</label>
+                        <input type="text" id="doubanRate" name="doubanRate">
+                        <label for="director">Director:</label>
+                        <input type="text" id="director" name="director">
+
+                        <label for="date">Date:</label>
+                        <input type="text" id="date" name="date">
+                        <label for="description">Description:</label>
+                        <input type="text" id="description" name="description">
+                        <input type="submit" value="Save">
+                    </form>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!--<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>-->
+
+    <script>
+        const form = document.getElementById('updateForm');
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const formData = new FormData(form);
+            const movieId = formData.get('movie_id');
+
+            try {
+                const response = await fetch('/updatemovie/', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    // 处理成功响应
+                    console.log('更新成功');
+                    location.reload();
+                } else {
+                    // 处理错误响应
+                    console.log('更新失败');
+                }
+            } catch (error) {
+                // 处理请求错误
+                console.log('请求错误', error);
+            }
+        });
+    </script>
+
+    <script>
+        function logout() {
+            window.location.href = "/logout";  // 跳转到登录页
+        }
+
+        function showDataVisualization() {
+            // 重定向到main.html页面
+            window.location.href = "/main/";
+        }
+
+
+        function showModal(description) {
+            alert(description);
+        }
+
+        function search() {
+            var input = document.getElementById('search-input');
+            var searchText = input.value.toLowerCase();
+            var table = document.getElementById('movieTable');
+            var rows = table.getElementsByTagName('tr');
+
+            for (var i = 1; i < rows.length; i++) { // 从1开始，跳过表头
+              var cells = rows[i].getElementsByTagName('td');
+              var rowMatch = false;
+
+              for (var j = 0; j < cells.length; j++) {
+                var cellText = cells[j].innerText.toLowerCase();
+
+                if (cellText.indexOf(searchText) > -1) {
+                  rowMatch = true;
+                  cells[j].classList.add('highlight');
+                } else {
+                  cells[j].classList.remove('highlight');
+                }
+              }
+
+              if (rowMatch) {
+                rows[i].style.display = '';
+              } else {
+                rows[i].style.display = 'none';
+              }
+            }
+        }
+
+
+        // 弹窗打开函数
+        function openModal(id, title, genre, doubanRate, director, date, description) {
+            document.getElementById("movie_id").value = id;
+            document.getElementById("title").value = title;
+            document.getElementById("genre").value = genre;
+            document.getElementById("doubanRate").value = doubanRate;
+            document.getElementById("director").value = director;
+            document.getElementById("date").value = date;
+            document.getElementById("description").value = description;
+            document.getElementById("myModal").style.display = "block";
+        }
+
+        // 弹窗关闭函数
+        function closeModal() {
+            document.getElementById("myModal").style.display = "none";
+
+        }
+
+        // 当点击Modal以外的区域时，关闭Modal
+        window.onclick = function(event) {
+            var modal = document.getElementById("myModal");
+            if (event.target == modal) {
+                closeModal();
+            }
+        }
+
+
+        function showUserManagement() {
+             // 重定向到main.html页面
+            window.location.href = "/main/";
+       }
+    </script>
+
+</body>
+</html>

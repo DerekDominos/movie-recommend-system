@@ -1,0 +1,200 @@
+{% extends 'recommend/base.html'%}
+{% block body %}
+
+{% if not request.user.is_authenticated %}
+    <br>
+{% else %}
+    <center style="color:#fff"><h2>欢迎 {{user.username}}!!</h2></center>
+{% endif %}
+
+<div class="container" >
+    <div class="col-xs-6 col-xs-offset-3">
+    	<form class="form-horizontal" role="search" method="get" action=''>
+            <br/>
+            <br/>
+            <div class="form-group">
+                <div class="input-group">
+                    <input type="text" class="form-control input-lg " name="q" value="{{ request.GET.q }}" placeholder="搜索电影 " list="movieOptions" autocomplete="off" />
+                    <datalist id="movieOptions">
+                         {% for movie in search_movies %}
+                            <option value="{{ movie.title }}">
+                                {% endfor %}
+                    </datalist>
+                    <span class='input-group-btn'>
+                        <button class='button1' type='submit'>搜索</button>
+                    </span>
+                </div>
+            </div>
+        </form>
+    </div>
+ </div>
+
+
+<p style="text-align:left;">
+    <span style="float:right;">
+        <a href="{% url 'recommend' %}" class="btn"><button style="color:#fff;background-color:#4CAF50;padding:10px;margin-right: 150px;">获取推荐电影</button></a>
+    <h2>电影列表</h2>
+    </span>
+</p>
+<hr>
+<br>
+
+
+<div>
+{% load sidebar_tags %}
+
+<!-- 页面内容 -->
+
+<div class="content">
+    <!-- 页面内容 -->
+</div>
+
+<!-- 侧边栏 -->
+{% sidebar_movies %}
+
+
+<!-- Movie list -->
+<form method="get" action="{% url 'movie_list' %}" style="margin-top: -25px;margin-top: -25px;margin-left: 40px;margin-bottom: 20px;">
+    <select name="genre" style="width: 200px;height:40px">
+        <option value="">全部</option>
+        <option value="剧情">剧情</option>
+        <option value="喜剧">喜剧</option>
+        <option value="爱情">爱情</option>
+        <option value="动作">动作</option>
+        <option value="动画">动画</option>
+        <option value="科幻">科幻</option>
+        <option value="惊悚">惊悚</option>
+        <option value="情色">情色</option>
+        <option value="恐怖">恐怖</option>
+        <option value="武侠">武侠</option>
+        <option value="歌舞">歌舞</option>
+        <option value="历史">历史</option>
+        <option value="战争">战争</option>
+        <option value="古装">古装</option>
+        <option value="音乐">音乐</option>
+        <option value="同性">同性</option>
+        <option value="灾难">灾难</option>
+        <option value="传记">传记</option>
+        <option value="家庭">家庭</option>
+        <option value="冒险">冒险</option>
+        <option value="奇幻">奇幻</option>
+        <option value="犯罪">犯罪</option>
+        <option value="悬疑">悬疑</option>
+        <option value="儿童">儿童</option>
+        <option value="运动">运动</option>
+        <option value="西部">西部</option>
+        <option value="真人秀">真人秀</option>
+        <option value="黑色电影">黑色电影</option>
+        <option value="舞台艺术">舞台艺术</option>
+        <option value="戏曲">戏曲</option>
+    </select>
+    <input type="submit" value="筛选" style="background-color: green; color: white;margin-top: 25px;margin-left: 25px;margin-right: 25px;width: 50px;height:40px" >
+</form>
+
+
+<form>
+    <div class="row" >
+            {% if movies %}
+            {% for movie in movies %}
+                <div class="col-sm-2 col-md-2">
+                    <div class="thumbnail" style="border-radius: 22px 22px 22px 22px;">
+                        <center>
+                            <h5 id="movie-title"
+                                style="color: #fff; font-size: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                {{movie.title}}
+                            </h5>
+                        </center>
+
+                        <a href="{% url 'detail' movie.id %}">
+                            <img src="{{ movie.movie_logo.url}}" class="img-responsive" style="border-radius: 22px 22px 22px 22px;">
+                        </a>
+                        <!-- <h5>{{movie.genre}}</h5> -->
+                    </div>
+                </div>
+                {% endfor %}
+                {% endif %}
+        </div>
+
+    <div class="row" style="bottom: 50px;">
+        {% if page_obj %}
+        {% for movie in page_obj %}
+        <div class="col-sm-2 col-md-2">
+            <div class="thumbnail" style="border-radius: 22px 22px 22px 22px;">
+                <center><h5>{{movie.title}}</h5></center>
+                <a href="{% url 'detail' movie.id %}">
+                    <img src="{{ movie.movie_logo.url}}" class="img-responsive" style="border-radius: 22px 22px 22px 22px;">
+                </a>
+                <!-- <h5>{{movie.genre}}</h5> -->
+            </div>
+        </div>
+        {% endfor %}
+            {% endif %}
+    </div>
+        <style>
+        .rowrow {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+    </style>
+    <div class="rowrow">
+    <div class="pagination" >
+        <span class="step-links">
+            {% if page_obj.has_previous %}
+                <a href="?page=1">&laquo; 首页</a>
+                <a href="?page={{ page_obj.previous_page_number }}">前页</a>
+            {% endif %}
+
+            <span class="current-page">{{ page_obj.number }}</span>
+
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}">后页</a>
+                <a href="?page={{ page_obj.paginator.num_pages }}">尾页 &raquo;</a>
+            {% endif %}
+        </span>
+    </div>
+    </div>
+    </div>
+
+</div>
+
+
+</form>
+<div class="row">
+        {% for movie in movies %}
+            <div class="col-md-4">
+                <!-- 电影的展示内容 -->
+            </div>
+        {% endfor %}
+    </div>
+
+<div class="rowrow">
+    <!-- 添加分页链接 -->
+    <div class="pagination">
+        <span class="step-links">
+            {% if movies.has_previous %}
+                <a href="?page=1{% if request.GET.genre %}&genre={{ request.GET.genre }}{% endif %}">&lt;&lt; 第一页</a>
+                <a href="?page={{ movies.previous_page_number }}{% if request.GET.genre %}&genre={{ request.GET.genre }}{% endif %}">&lt; 上一页</a>
+            {% endif %}
+
+            <span class="current-page">{{ movies.number }}</span>
+
+
+            {% if movies.has_next %}
+                <a href="?page={{ movies.next_page_number }}{% if request.GET.genre %}&genre={{ request.GET.genre }}{% endif %}">下一页 &gt;</a>
+                <a href="?page={{ movies.paginator.num_pages }}{% if request.GET.genre %}&genre={{ request.GET.genre }}{% endif %}">最后一页 &gt;&gt;</a>
+            {% endif %}
+        </span>
+    </div>
+</div>
+
+<script>
+    var movieTitle = document.getElementById("movie-title");
+    if (movieTitle.innerText.length > 10) {
+        movieTitle.innerText = movieTitle.innerText.substring(0, 10) + "...";
+}
+
+</script>
+
+
+{% endblock %}

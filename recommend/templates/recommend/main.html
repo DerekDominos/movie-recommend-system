@@ -1,0 +1,873 @@
+<!-- templates/admin_dashboard.html -->
+
+<!DOCTYPE html>
+<html>
+<head>
+     <meta charset="UTF-8">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-alpha1/dist/css/bootstrap.min.css">
+    <style>
+        /* 样式定义，可根据实际需求进行修改 */
+        .ellipsis-text {
+          overflow: hidden;
+          white-space: nowrap;
+          text-overflow: ellipsis;
+        }
+
+        .modal_m {
+          display: none;
+          position: fixed;
+          z-index: 1;
+          left: 0;
+          top: 0;
+          width: 100%;
+          height: 100%;
+          overflow: auto;
+          background-color: rgba(0, 128, 0, 0.2); /* 修改背景颜色为浅绿色 */
+        }
+
+        .modal-content_m {
+          background-color: #fff;
+          margin: 15% auto;
+          padding: 20px;
+          border: 1px solid #888;
+          width: 50%; /* 修改宽度为 50% */
+        }
+
+        .modal-content_m:last-child {
+          width: auto; /* 最后一个元素的宽度为自适应 */
+        }
+
+        .close_m {
+          color: #888;
+          float: right;
+          font-size: 28px;
+          font-weight: bold;
+        }
+
+        .close_m:hover,
+        .close_m:focus {
+          color: #000;
+          text-decoration: none;
+          cursor: pointer;
+        }
+
+        .highlight {
+          background-color: yellow;
+        }
+        table {
+            border-collapse: collapse;
+        }
+
+        table, th, td {
+            border: 1px solid black;
+            padding: 8px;
+        }
+        .modal {
+            display: none; /* 初始隐藏 */
+            position: fixed;
+            z-index: 9999;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 1500px;
+            max-width: 80%;
+            text-align: center;
+        }
+        .header {
+            background-color: #f1f1f1;
+            padding: 20px;
+        }
+        .content {
+            padding: 20px;
+        }
+        .container {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .chart-container {
+            width: 50%;
+        }
+
+        .chart-container-centered {
+            display: flex;
+            justify-content: center;
+            width: 60%;
+        }
+        #userTable {
+            border-collapse: collapse;
+            width: 100%;
+            border: 1px solid #ddd; /* 表格边框 */
+        }
+
+        #userTable th,
+        #userTable td {
+            padding: 8px;
+            border: 1px solid #ddd; /* 单元格边框 */
+        }
+
+        #userTable tr:nth-child(even) {
+            background-color: #f2f2f2; /* 偶数行背景色 */
+        }
+
+        #userTable th {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+    </style>
+
+</head>
+<body>
+{% load static %}
+    <div class="header">
+        <h1>Welcome, Administrator!</h1>
+        <button onclick="logout()" class="btn btn-danger">Logout</button>
+        <button onclick="showDataVisualization()" class="btn btn-primary">Data Visualization</button>
+        <button onclick="showFilmManagement()" class="btn btn-success">Film Information Management</button>
+        <button onclick="showUserManagement()" class="btn btn-info">User Information Management</button>
+    </div>
+    <div class="content" >
+        <div id="dataVisualization" style="display: none;">
+            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+            <div class="container">
+                <div class="chart-container">
+                    <canvas id="pieChart"></canvas>
+                </div>
+                <div class="chart-container" style="margin-top: 150px;">
+                    <canvas id="topTenChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-container-centered,"style="width:80%;margin-left: 150px;">
+                <canvas id="scatterChart"></canvas>
+            </div>
+        </div>
+
+    </div>
+        <div id="filmManagement" style="display: none;">
+            <h2>Film Information Management</h2>
+
+
+        </div>
+
+        <div id="userManagement" style="display: none;">
+            <input type="text" id="searchInput" placeholder="Search...">
+            <button id="searchButton">Search</button><button id="addUserButton" style="margin-left: 150px;width:300px;height:32px" onclick="openPopup()">Add User</button>
+            <div class="chart-container-centered" style="max-width: 100%; max-height: 100vh;margin-left: 300px;">
+                <table id="userTable" style="width: 100%;">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Password</th>
+                            <th>Last_Login</th>
+                            <th>Is_Superuser</th>
+                            <th>Username</th>
+                            <th>First_Name</th>
+                            <th>Last_Name</th>
+                            <th>Email</th>
+                            <th>Is_Active</th>
+                            <th>Date_Joined</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- 表格内容 -->
+                    </tbody>
+                </table>
+                <div id="popupContainer" style="display: none;">
+                  <!-- 弹窗内容 -->
+                </div>
+            </div>
+    </div>
+
+<!--<script type="text/javascript" src="{% static 'recommend/js/chart.min.js' %}"></script>-->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        function openPopup() {
+          // 创建弹窗元素
+          var modal = document.createElement('div');
+          modal.classList.add('modal');
+
+          var modalContent = document.createElement('div');
+          modalContent.classList.add('modal-content');
+
+          // 创建输入字段
+          var fields = [
+            { label: 'ID', id: 'id' },
+            { label: 'Password', id: 'password' },
+            { label: 'Is_Superuser', id: 'is_superuser' },
+            { label: 'Username', id: 'username' },
+            { label: 'First_Name', id: 'first_name' },
+            { label: 'Last_Name', id: 'last_name' },
+            { label: 'Email', id: 'email' }
+          ];
+
+          fields.forEach(function(field) {
+            var label = document.createElement('label');
+            label.setAttribute('for', field.id);
+            label.textContent = field.label;
+            modalContent.appendChild(label);
+
+            var input = document.createElement('input');
+            input.setAttribute('type', 'text');
+            input.id = field.id;
+            modalContent.appendChild(input);
+          });
+
+          // 创建保存按钮
+          // 创建取消按钮
+        var cancelButton = document.createElement('button');
+        cancelButton.textContent = '取消';
+        cancelButton.addEventListener('click', function() {
+          closeModal2(modal);
+        });
+        modalContent.appendChild(cancelButton);
+
+          var saveButton = document.createElement('button');
+          saveButton.textContent = '保存';
+          saveButton.addEventListener('click', function() {
+            var userData = {};
+
+            fields.forEach(function(field) {
+              userData[field.id] = document.getElementById(field.id).value;
+            });
+
+            // 设置is_active为True
+            userData['is_active'] = true;
+
+            saveUserData(userData);
+            closeModal();
+          });
+          modalContent.appendChild(saveButton);
+
+          // 将弹窗内容添加到弹窗容器中
+          modal.appendChild(modalContent);
+
+          // 将弹窗添加到页面主体中
+          document.body.appendChild(modal);
+
+          // 显示弹窗
+          modal.style.display = 'block';
+        }
+        function closeModal2(modal) {
+          // 关闭弹窗
+          modal.style.display = 'none';
+          document.body.removeChild(modal);
+          }
+
+
+        function logout() {
+            window.location.href = "/logout";  // 跳转到登录页
+        }
+        function showDataVisualization() {
+            document.getElementById("dataVisualization").style.display = "block";
+            document.getElementById("filmManagement").style.display = "none";
+            document.getElementById("userManagement").style.display = "none";
+            reform();
+            reform1();
+            reform2();
+        }
+
+        function showFilmManagement() {
+            window.location.href = "/main_movie/";  // 重定向到main.html页面
+        }
+
+
+        function showUserManagement() {
+            document.getElementById("dataVisualization").style.display = "none";
+            document.getElementById("filmManagement").style.display = "none";
+            document.getElementById("userManagement").style.display = "block";
+            drawUserTable();
+        }
+
+        function reform() {
+            var genres = {{genres|safe}};
+            var counts = {{counts|safe}};
+            var chartData = {
+                labels: Object.values(genres).map(String),
+                datasets: [{
+                    data: Object.values(counts),
+                    backgroundColor: getRandomColors(Object.keys(genres).length)
+                }]
+            };
+            console.log(chartData);
+
+            // 使用 Chart.js 绘制饼状图
+            var ctx = document.getElementById('pieChart').getContext('2d');
+            var myChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: chartData,
+                options: {
+                onClick: function(event, elements) {
+                    if (elements.length > 0) {
+                        var segment = elements[0];
+                        console.log(elements)
+                        var genre = chartData.labels[segment.index];
+
+                        var url = "/movie-list/?genre=" + encodeURIComponent(genre);
+                        window.location.href = url;
+                    }
+                }
+            }
+            });
+
+            // 生成随机颜色数组
+            function getRandomColors(count) {
+                var colors = [];
+                for (var i = 0; i < count; i++) {
+                    colors.push(getRandomColor());
+                }
+                return colors;
+            }
+
+            // 生成随机颜色
+            function getRandomColor() {
+                var letters = '0123456789ABCDEF';
+                var color = '#';
+                for (var i = 0; i < 6; i++) {
+                    color += letters[Math.floor(Math.random() * 16)];
+                }
+                return color;
+            }
+        }
+
+      function reform1() {
+            var movieIds = [
+                {% for id in movie_id %}
+                    "{{ id }}",
+                {% endfor %}
+            ];
+
+            var ctx = document.getElementById('topTenChart').getContext('2d');
+
+            var topMoviesData = {
+                labels: [
+                    {% for movie in movie_names %}
+                        "{{ movie.title }}",
+                    {% endfor %}
+                ],
+                datasets: [{
+                    label: 'Click Count',
+                    data: [{% for count in click_counts %}{{ count }},{% endfor %}],
+                    backgroundColor: ['rgba(75, 192, 192, 1)', 'rgba(54, 162, 235, 1)', 'rgba(255, 206, 86, 1)', 'rgba(231, 233, 237, 1)', 'rgba(255, 99, 132, 1)', 'rgba(75, 192, 192, 1)', 'rgba(153, 102, 255, 1)', 'rgba(255, 159, 64, 1)', 'rgba(54, 162, 235, 1)', 'rgba(255, 99, 132, 1)'],
+                    borderColor: ['rgba(75, 192, 192, 1)', 'rgba(54, 162, 235, 1)', 'rgba(255, 206, 86, 1)', 'rgba(231, 233, 237, 1)', 'rgba(255, 99, 132, 1)', 'rgba(75, 192, 192, 1)', 'rgba(153, 102, 255, 1)', 'rgba(255, 159, 64, 1)', 'rgba(54, 162, 235, 1)', 'rgba(255, 99, 132, 1)'],
+                    borderWidth: 1
+                }]
+            };
+
+            var topTenChart = new Chart(ctx, {
+                type: 'bar',
+                data: topMoviesData,
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            precision: 0
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    onClick: function (event, element) {
+                        if (element.length > 0) {
+                            var index = element[0].index;
+                            var movieId = movieIds[index];
+                            window.location.href = "http://127.0.0.1:8000/" + movieId + "/";
+                        }
+                    },
+                    elements: {
+                        bar: {
+                            backgroundColor: 'rgba(75, 192, 192, 1)',
+                            borderWidth: 0
+                        }
+                    }
+                }
+            });
+        }
+         function reform2(){
+            var doubanRates = [
+                {% for douban_rate in douban_rates %}
+                    {{ douban_rate }},
+                {% endfor %}
+            ];
+
+            var movieIds = [
+                {% for movie_id in movie_ids %}
+                    "{{ movie_id }}",
+                {% endfor %}
+            ];
+
+            var ctx = document.getElementById('scatterChart').getContext('2d');
+            var scatterData = {
+
+                datasets: [
+                    {
+                        label: 'Douban Rate',
+                        data: doubanRates.map((rate, index) => ({ x: index, y: rate })),
+                        backgroundColor: 'rgba(75, 192, 192, 1)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        radius: 2,
+                        type: 'scatter'
+                    }
+                ]
+            };
+
+            var scatterChart = new Chart(ctx, {
+                type: 'scatter',
+                data: scatterData,
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            min: 4.0,
+                            max: 10.0
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            enabled: true,
+                            callbacks: {
+                                label: function (context) {
+                                    var movieIndex = context.dataIndex;
+                                    return movieIds[movieIndex];
+                                }
+                            }
+                        }
+                    },
+                    onClick: function(event, chartElement) {
+                        if (chartElement.length > 0) {
+                            var movieIndex = chartElement[0].index;
+                            var movieId = movieIds[movieIndex];
+                            window.location.href = "http://127.0.0.1:8000/" + movieId;
+                        }
+                    }
+                }
+            });
+        }
+         function drawUserTable() {
+            var users = {{ contextusers.users_data|safe }}; // 从上下文获取用户数据
+            var tableBody = document.getElementById('userTable').getElementsByTagName('tbody')[0];
+
+            for (var i = 0; i < users.length; i++) {
+                var user = users[i];
+                var row = document.createElement('tr');
+
+                // 创建单元格并设置内容
+                var idCell = document.createElement('td');
+                idCell.innerText = user.id;
+                row.appendChild(idCell);
+
+                var passwordCell = document.createElement('td');
+                var passwordText = user.password;
+                var truncatedPassword = passwordText.substring(0, 10); // 截取前十个字符
+                passwordCell.innerText = truncatedPassword;
+                passwordCell.addEventListener('dblclick', function() {
+                    showModal(passwordText);
+                });
+                row.appendChild(passwordCell);
+
+                var lastLoginCell = document.createElement('td');
+                lastLoginCell.innerText = user.last_login;
+                row.appendChild(lastLoginCell);
+
+                var isSuperuserCell = document.createElement('td');
+                isSuperuserCell.innerText = user.is_superuser.toLowerCase() == 'true' ? 'True' : 'False';
+                row.appendChild(isSuperuserCell);
+
+                var usernameCell = document.createElement('td');
+                usernameCell.innerText = user.username;
+                row.appendChild(usernameCell);
+
+                var firstNameCell = document.createElement('td');
+                firstNameCell.innerText = user.first_name;
+                row.appendChild(firstNameCell);
+
+                var lastNameCell = document.createElement('td');
+                lastNameCell.innerText = user.last_name;
+                row.appendChild(lastNameCell);
+
+                var emailCell = document.createElement('td');
+                emailCell.innerText = user.email;
+                row.appendChild(emailCell);
+
+                var isActiveCell = document.createElement('td');
+                isActiveCell.innerText = user.is_active.toLowerCase() == 'true' ? 'True' : 'False';
+                row.appendChild(isActiveCell);
+
+                var dateJoinedCell = document.createElement('td');
+                dateJoinedCell.innerText = user.date_joined;
+                row.appendChild(dateJoinedCell);
+
+
+                var actionsCell = document.createElement('td');
+                var editBtn = document.createElement('button');
+                editBtn.innerText = 'Edit';
+                actionsCell.appendChild(editBtn);
+                editBtn.addEventListener('click', function() {  // 将事件监听器绑定到 editBtn
+                    var idCell = this.parentNode.parentNode.querySelector('td:first-child');
+                    var userId = idCell.innerText;
+                    pop(userId, users);
+                });
+
+                var deleteBtn = document.createElement('button');
+                deleteBtn.innerText = 'Delete';
+                actionsCell.appendChild(deleteBtn);
+
+                deleteBtn.addEventListener('click', function() {
+                  var idCell = this.parentNode.parentNode.querySelector('td:first-child');
+                  var userId = idCell.innerText;
+                  console.log(userId);
+                  deleteFunction(userId);
+                });
+
+                row.appendChild(actionsCell);
+                tableBody.appendChild(row);
+            }
+
+
+            function getCookie(name) {
+              var cookieValue = null;
+              if (document.cookie && document.cookie !== '') {
+                var cookies = document.cookie.split(';');
+                for (var i = 0; i < cookies.length; i++) {
+                  var cookie = cookies[i].trim();
+                  if (cookie.startsWith(name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                  }
+                }
+              }
+              return cookieValue;
+            }
+
+           function deleteFunction(userId) {
+              var csrftoken = getCookie('csrftoken');
+
+              fetch('/api/users/' + userId + '/', {
+                method: 'DELETE',
+                headers: {
+                  'X-CSRFToken': csrftoken
+                },
+              })
+                .then(response => {
+                  if (response.ok) {
+                    console.log('用户已成功删除');
+                    alert('用户已成功删除'); // 弹出提示框
+                    location.reload(); // 刷新页面
+                  } else {
+                    console.error('删除用户时出错');
+                    // 处理删除错误的逻辑
+                  }
+                })
+                .catch(error => {
+                  console.error('请求出错', error);
+                  // 处理请求错误的逻辑
+                });
+            }
+
+
+            var searchInput = document.getElementById('searchInput');
+            var searchButton = document.getElementById('searchButton');
+            var tableRows = document.getElementsByTagName('tr');
+            var tableHeader = tableRows[0]; // 表头行
+
+            searchInput.style.transform = 'translateX(130px)';
+            searchButton.style.transform = 'translateX(130px)';
+            searchInput.style.width = '300px';
+            searchButton.style.width = '300px';
+            searchInput.style.fontSize = '18px';
+            searchButton.style.fontSize = '18px';
+
+            function highlightText(text) {
+              for (var i = 1; i < tableRows.length; i++) { // 从第二行开始搜索
+                var row = tableRows[i];
+                var cells = row.getElementsByTagName('td');
+                var found = false;
+
+                for (var j = 0; j < cells.length - 1; j++) { // 忽略最后一列
+                  var cell = cells[j];
+                  var cellText = cell.innerText;
+
+                  if (cellText.includes(text)) {
+                    cell.innerHTML = cellText.replace(new RegExp(text, "gi"), '<span class="highlight">' + text + '</span>');
+                    found = true;
+                  } else {
+                    cell.innerHTML = cellText;
+                  }
+                }
+
+                if (found) {
+                  row.style.display = '';
+                } else {
+                  row.style.display = 'none';
+                }
+              }
+            }
+
+            function clearHighlight() {
+              var cellHighlights = document.getElementsByClassName('highlight');
+
+              while (cellHighlights.length) {
+                var highlight = cellHighlights[0];
+                highlight.outerHTML = highlight.innerHTML;
+              }
+            }
+
+            searchButton.addEventListener('click', function () {
+              var keyword = searchInput.value.toLowerCase();
+              clearHighlight();
+
+              if (keyword) {
+                for (var i = 1; i < tableRows.length; i++) { // 从第二行开始搜索
+                  var row = tableRows[i];
+                  var cells = row.getElementsByTagName('td');
+                  var found = false;
+
+                  for (var j = 0; j < cells.length - 1; j++) { // 忽略最后一列
+                    var cell = cells[j];
+                    var cellText = cell.innerText.toLowerCase();
+
+                    if (cellText.includes(keyword)) {
+                      found = true;
+                      highlightText(keyword);
+                      break;
+                    }
+                  }
+
+                  if (found) {
+                    row.style.display = '';
+                  } else {
+                    row.style.display = 'none';
+                  }
+                }
+              } else {
+                for (var i = 1; i < tableRows.length; i++) { // 从第二行开始显示所有数据行
+                  var row = tableRows[i];
+                  row.style.display = '';
+                }
+              }
+            });
+        }
+
+
+
+        function showModal(password) {
+            // 创建弹窗元素
+            var modal = document.createElement('div');
+            modal.classList.add('modal');
+
+            var modalContent = document.createElement('div');
+            modalContent.classList.add('modal-content');
+
+            var closeButton = document.createElement('span');
+            closeButton.classList.add('close');
+            closeButton.innerHTML = '&times;';
+            closeButton.addEventListener('click', function() {
+                closeModal(modal);
+            });
+
+            var passwordText = document.createElement('p');
+            passwordText.innerText = password;
+
+            modalContent.appendChild(closeButton);
+            modalContent.appendChild(passwordText);
+            modal.appendChild(modalContent);
+            document.body.appendChild(modal);
+
+            // 显示弹窗
+            modal.style.display = 'block';
+        }
+
+        function closeModal(modal) {
+            // 关闭弹窗
+            modal.style.display = 'none';
+            document.body.removeChild(modal);
+        }
+
+        function pop(userId, users) {
+          // 找到对应id的用户数据
+          var userData;
+          for (var i = 0; i < users.length; i++) {
+            if (users[i].id == userId) {
+              userData = users[i];
+              break;
+            }
+          }
+
+
+          if (userData) {
+            // 创建表格
+            var table = document.createElement('table');
+            table.classList.add('bordered-table'); // 添加自定义的CSS类名
+
+            // 创建表头
+            var thead = document.createElement('thead');
+            var headerRow = document.createElement('tr');
+            var headers = Object.keys(userData);
+            for (var j = 0; j < headers.length; j++) {
+              var header = document.createElement('th');
+              header.innerText = headers[j];
+              headerRow.appendChild(header);
+            }
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
+
+            // 创建表体
+            var tbody = document.createElement('tbody');
+
+            // 创建双击事件处理程序
+            var editCell = function(event) {
+              var cell = event.target;
+              var rowIndex = cell.parentNode.rowIndex;
+              var field = headers[cell.cellIndex];
+
+              // 检查是否允许编辑
+              if (field === 'id' || field === 'password' || field === 'date_joined' || field === 'last_login') {
+                alert('此字段不允许编辑！');
+                return;
+              }
+
+              // 创建输入框并将单元格内容设置为输入框
+              var input = document.createElement('input');
+              input.type = 'text';
+              input.value = cell.innerText;
+              cell.innerHTML = '';
+              cell.appendChild(input);
+
+              // 为输入框添加失去焦点事件处理程序
+              input.addEventListener('blur', function() {
+                // 获取新值
+                var newValue = input.value;
+
+                // 将新值保存到数据对象中
+                userData[field] = newValue;
+
+                // 更新单元格内容
+                cell.innerText = newValue;
+              });
+            };
+
+            // 填充表格数据
+            var valueRow = document.createElement('tr');
+            for (var k = 0; k < headers.length; k++) {
+              var valueCell = document.createElement('td');
+              var fieldValue = userData[headers[k]];
+
+              if (headers[k] === 'password') {
+                fieldValue = fieldValue.slice(0, 10); // 限制密码字段只显示前十个字符
+              }
+
+              valueCell.innerText = fieldValue;
+              valueCell.addEventListener('dblclick', editCell); // 添加双击事件监听器
+              valueRow.appendChild(valueCell);
+            }
+
+            tbody.appendChild(valueRow);
+            table.appendChild(tbody);
+
+            // 创建弹窗容器
+            var modal = document.createElement('div');
+            modal.classList.add('modal');
+
+            var modalContent = document.createElement('div');
+            modalContent.classList.add('modal-content');
+
+            var closeButton = document.createElement('span');
+            closeButton.classList.add('close');
+            closeButton.innerHTML = '&times;';
+            closeButton.addEventListener('click', function() {
+              closeModal(modal, userData); // 传递用户数据对象
+            });
+
+            // 将创建的表格添加到弹窗容器
+            modalContent.appendChild(closeButton);
+            modalContent.appendChild(table);
+            modal.appendChild(modalContent);
+            document.body.appendChild(modal);
+
+            // 显示弹窗
+            modal.style.display = 'block';
+          } else {
+            console.log('未找到匹配的用户数据');
+          }
+        }
+
+        function closeModal(modal, userData) {
+          // 关闭弹窗
+          modal.style.display = 'none';
+          document.body.removeChild(modal);
+
+          // 保存修改后的用户数据到数据库
+          saveUserData(userData);
+        }
+
+        function saveUserData(userData) {
+              console.log(userData);
+              // 发送 POST 请求保存用户数据
+              fetch('http://127.0.0.1:8000/save_user_data/', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'X-CSRFToken': '{{ csrf_token }}'  // 使用Django模板标签获取CSRF令牌
+                },
+                body: JSON.stringify(userData)
+              })
+              .then(response => {
+                if (response.ok) {
+                  return response.json();
+                } else {
+                  throw new Error('请求失败：' + response.status);
+                }
+              })
+              .then(result => {
+                if (result.status == 'success') {
+                  console.log('用户数据保存成功！');
+                  showMessage('保存成功！');
+                } else {
+                  console.log('保存失败:', result.message);
+                  showMessage('保存失败：' + result.message);
+                }
+              })
+              .catch(error => {
+                console.log('请求失败:', error);
+                showMessage('请求失败，请重试！');
+              });
+            }
+
+        function updateUI() {
+          location.reload(); // 刷新页面
+        }
+        function showMessage(message) {
+          // 显示消息
+          console.log(message);
+
+          // 弹出提示框
+          alert(message);
+          window.location.reload();
+        }
+
+        function resetForm() {
+          // 重置表单
+          // TODO: 在保存失败后重置表单的逻辑
+          // 例如，清空表单字段的值
+          document.getElementById('username').value = '';
+          document.getElementById('email').value = '';
+        }
+
+    </script>
+</body>
+</html>
